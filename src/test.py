@@ -15,6 +15,6 @@ def generateNgrams(word, n):
                 listOfSubStrs.append(cutChars(i, sliceWindow, word))
     print(listOfSubStrs)
 
-inputWord = 'HelloBaby!!'
+inputWord = 'Hello!!'
 print(len(inputWord))
 generateNgrams(inputWord,3)

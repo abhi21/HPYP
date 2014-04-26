@@ -23,7 +23,7 @@ def getSubStr(beginIndex, sliceWindow, word):
     return word[beginIndex: beginIndex + sliceWindow]
 
 
-def updateFrequency(word, n):
+def updateFrequencyOld(word, n):
     word = word.lower()
     lenWord = len(word)
     for i in range(0, lenWord):
@@ -47,26 +47,50 @@ for key in keysDict:
     #print ('Key: ' + key + ' \t')
     #print(modelDict[keysDict[key]])
 
-updateFrequency('AbhiAb',n)
 
-print(modelDict['']['a'][0])
-print(modelDict['a']['b'][0])
-print(modelDict['ab']['h'][0])
-print(modelDict['']['b'][0])
-print(modelDict['b']['h'][0])
-print(modelDict['bh']['i'][0])
-print(modelDict['']['h'][0])
-print(modelDict['h']['i'][0])
-print(modelDict['']['i'][0])
+def updateFrequency(word, n):
+    word = word.lower()
+    wordLen = len(word)
 
-#modelDict['a']['a'][0] = modelDict['a']['a'][0] + 2
-#print(modelDict['a']['a'][0])
-
-file = open('train.txt', 'r').read()
-
-
+    for i in range(0, wordLen):
+        tempN = n
+        psc = i
+        while((psc >= 0) and (tempN-1 >=0)):
+            psc = psc-1
+            tempN = tempN - 1
+            context = word[psc + 1:i]
+            #3print('Context:' + context)
+            char = word[i:i + 1]
+            #print('Char: ' + char)
+            modelDict[context][char][0] += 1
 
 
+#updateFrequency('AbhiAb',n)
+
+#print(modelDict['']['a'][0])
+#print(modelDict['a']['b'][0])
+#print(modelDict['ab']['h'][0])
+#print(modelDict['']['b'][0])
+#print(modelDict['b']['h'][0])
+#print(modelDict['bh']['i'][0])
+#print(modelDict['']['h'][0])
+#print(modelDict['h']['i'][0])
+#print(modelDict['']['i'][0])
+
+modelDict['a']['a'][0] = modelDict['a']['a'][0] + 2
+print(modelDict['a']['a'][0])
+
+with open("data/dist_all_last.txt", "r") as f:
+  for line in f:
+    name = line.split()[0]
+    updateFrequency(name,4)
+    print(name)
+
+for key in keysDict:
+    print('\nKey: ' + key + ": value= ")
+    print(modelDict[key])
+
+print(modelDict['aa']['r'])
 
 
 
