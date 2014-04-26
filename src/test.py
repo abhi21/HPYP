@@ -38,3 +38,35 @@ def updateFrequencyOld(word, n, totalIncrements):
                     #print(char)
                     modelDict[context][char][0] += 1
                     totalIncrements +=1
+
+
+#Checks
+sumForNull = modelDict['']['custCount']
+sumForAll = 0
+for key in keysDict:
+    sumForAll += modelDict[key]['custCount']
+sumForAll -= sumForNull
+
+print(sumForNull)
+print(sumForAll)
+
+
+
+#updateFrequency('AbhiAb',n)
+
+#print(modelDict['']['a'][0])
+#print(modelDict['a']['b'][0])
+#print(modelDict['ab']['h'][0])
+#print(modelDict['']['b'][0])
+#print(modelDict['b']['h'][0])
+#print(modelDict['bh']['i'][0])
+#print(modelDict['']['h'][0])
+#print(modelDict['h']['i'][0])
+#print(modelDict['']['i'][0])
+
+#modelDict['a']['a'][0] = modelDict['a']['a'][0] + 2
+#print(modelDict['a']['a'][0])
+#
+#for key in keysDict:
+#    print('\nKey: ' + key)
+#    #print(modelDict[key])

@@ -26,7 +26,7 @@
       <file leaf-file-name="init.py" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/init.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="5" column="5" selection-start="64" selection-end="64" vertical-scroll-proportion="0.20949721" vertical-offset="0" max-vertical-offset="2130">
+            <state line="139" column="105" selection-start="4168" selection-end="4168" vertical-scroll-proportion="0.5810056" vertical-offset="1877" max-vertical-offset="2235">
               <folding />
             </state>
           </provider>
@@ -44,7 +44,7 @@
       <file leaf-file-name="test.py" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/test.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="33" column="39" selection-start="962" selection-end="1002" vertical-scroll-proportion="0.0" vertical-offset="259" max-vertical-offset="690">
+            <state line="72" column="0" selection-start="1924" selection-end="1924" vertical-scroll-proportion="0.0" vertical-offset="739" max-vertical-offset="1170">
               <folding />
             </state>
           </provider>
@@ -67,6 +67,7 @@
     </option>
   </component>
   <component name="ProjectFrameBounds">
+    <option name="x" value="1" />
     <option name="y" value="22" />
     <option name="width" value="1280" />
     <option name="height" value="774" />
@@ -348,7 +349,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="22" width="1280" height="774" extended-state="6" />
+    <frame x="1" y="22" width="1280" height="774" extended-state="6" />
     <editor active="false" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -469,13 +470,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/test.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="33" column="39" selection-start="962" selection-end="1002" vertical-scroll-proportion="0.0" vertical-offset="259" max-vertical-offset="690">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file:///Library/Frameworks/Python.framework/Versions/3.4/lib/python3.4/random.py">
       <provider selected="true" editor-type-id="text-editor">
         <state line="193" column="0" selection-start="6681" selection-end="6681" vertical-scroll-proportion="0.33153638" vertical-offset="2682" max-vertical-offset="11055">
@@ -504,9 +498,16 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/src/test.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="72" column="0" selection-start="1924" selection-end="1924" vertical-scroll-proportion="0.0" vertical-offset="739" max-vertical-offset="1170">
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/init.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="5" column="5" selection-start="64" selection-end="64" vertical-scroll-proportion="0.20949721" vertical-offset="0" max-vertical-offset="2130">
+        <state line="139" column="105" selection-start="4168" selection-end="4168" vertical-scroll-proportion="0.5810056" vertical-offset="1877" max-vertical-offset="2235">
           <folding />
         </state>
       </provider>
