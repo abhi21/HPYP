@@ -92,3 +92,12 @@ def initializeTables(word):
             char = word[i:i + 1]
             #print('Char: ' + char)
             modelDict[context][char][0] += 1
+
+########################Initialization Check
+
+def assertInitialization():
+    for key in restaurantNames:
+        for char in characters:
+            freq = modelDict[key][char][0]
+            sumCustomers = sum(modelDict[key][char])-freq
+            print('Freq: ' + str(freq) + 'Customers' + str(sumCustomers))

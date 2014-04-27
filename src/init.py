@@ -5,28 +5,39 @@ import random
 
 n = 2
 modelDict = {}
+samplingTableCount ={}
 restaurantNames ={}
 totalIncrements = 0
 global index
 index = -1
+
+global ITERATION_COUNT
+ITERATION_COUNT = 1
+
 
 global loopC
 loopC = 0
 characters = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
 totalTableStr = 'totalTables'
 custCountStr = 'custCount'
-
-allContexts = []
-allChars = []
-allTables = []
 qu = .8
 du = .2
 quStr = 'qu'
 duStr = 'du'
 
+allContexts = []
+allChars = []
+allTables = []
+
 
 def initializeList():
     freq = {custCountStr: 0, totalTableStr:0, quStr: qu, duStr: du}
+    for item in characters:
+        freq[item] = [0]
+    return freq
+
+def initializeListSamplingTableCount():
+    freq={}
     for item in characters:
         freq[item] = [0]
     return freq
@@ -40,14 +51,7 @@ def makeKey(k,n):
             itemK = item + k
             makeKey(itemK, n-1)
 
-#Generating restaurantNames from n
-makeKey('',n)
-
-#Generating Main Dictionary
-for restaurant in restaurantNames:
-    modelDict[restaurantNames[restaurant]] = initializeList()
-
-#Update frequency count, partitions
+#Updates frequency count, and initializes table assignment
 def updateFrequency(word, n):
     word = word.lower()
     wordLen = len(word)
@@ -70,24 +74,15 @@ def updateFrequency(word, n):
             allContexts.append(context)
             allChars.append(char)
             nTable = len(modelDict[context][char])
-            tableNumber = random.randrange(1, nTable)    #Range starts from 1, as first element is frequency count
+            tableNumber = random.randrange(1, nTable+1)    #Range starts from 1, as first element is frequency count
             if tableNumber < nTable:
                 modelDict[context][char][tableNumber] += 1
-                #global loopC
-                #loopC += 1
-                #print(loopC)
             else:
                 modelDict[context][char].append(1)
             allTables.append(tableNumber)
 
-def assertInitialization():
-    for key in restaurantNames:
-        for char in characters:
-            freq = modelDict[key][char][0]
-            sumCustomers = sum(modelDict[key][char])-freq
-            print('Freq: ' + str(freq) + 'Customers' + str(sumCustomers))
-
-def wordProb(context, char):
+#Calculates probability of a character in a given context
+def charProb(context, char):
     if(context == ''):
         return 1/26
     else:
@@ -100,27 +95,45 @@ def wordProb(context, char):
         selfProb = (cuw - (du*tuw))/(qu + cu)
         baseProb = (qu + (du*tu))/(qu+cu)
         context = context[1:len(context)]
-        return selfProb + (baseProb*wordProb(context,char))
+        return selfProb + (baseProb*charProb(context,char))
 
+#Creates restaurantNames for a given context length
+makeKey('',n)
 
-with open("data/dist_female_first.txt", "r") as f:
+#Creates Main Dictionary
+for restaurant in restaurantNames:
+    modelDict[restaurantNames[restaurant]] = initializeList()
+
+#Reads Training File
+fileName = "data/dist_female_first.txt"
+file = open(fileName, "r")
+with file as f:
   for line in f:
     name = line.split()[0]
-    updateFrequency(name,n)
-  assertInitialization()
+    updateFrequency(name,n)  #Updates frequency count, and initializes table assignment
 
+file.close()
 
+#Generates custCount and totalTable
 for restaurant in restaurantNames:
     for dish in modelDict[restaurant]:
-        if dish != custCountStr and dish != totalTableStr:
+        if dish != custCountStr and dish != totalTableStr and dish != quStr and dish != duStr:
             modelDict[restaurant][custCountStr] += modelDict[restaurant][dish][0]
             modelDict[restaurant][totalTableStr] += len(modelDict[restaurant][dish]) - 1
 
+#Prints all details of seating arrangement
 for restaurant in restaurantNames:
-   print('\nKey: ' + restaurant)
-   print('Cust '+str(modelDict[restaurant][custCountStr]) + "  TableCount: "+ str(modelDict[restaurant][totalTableStr]))
-   #for k in modelDict[key]:
-        #print(modelDict[key][k])
+    print('\nrestaurant: ' + restaurant)
+    print('Cust '+str(modelDict[restaurant][custCountStr]) + "  TableCount: "+ str(modelDict[restaurant][totalTableStr]))
+    for dish in modelDict[restaurant]:
+        if dish != custCountStr and dish != totalTableStr and dish != quStr and dish != duStr:
+            print('\n\tdish: ' + dish)
+            print('\tCust '+str(modelDict[restaurant][dish][0]) + "  TableCount: "+ str(len(modelDict[restaurant][dish])-1))
 
+#Creates data structure to save table count for each dish in each restaurant for each iteration step
 for restaurant in restaurantNames:
-    print(restaurant)
+    samplingTableCount[restaurantNames[restaurant]] = initializeListSamplingTableCount()
+
+
+#for i in range(0,ITERATION_COUNT):
+#    for char in allChars:
