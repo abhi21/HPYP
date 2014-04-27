@@ -2,6 +2,7 @@ __author__ = 'abhi21'
 
 #import numpy as num
 import random
+from math import floor
 
 n = 2
 modelDict = {}
@@ -33,7 +34,7 @@ allTables = []
 def initializeList():
     freq = {custCountStr: 0, totalTableStr:0, quStr: qu, duStr: du}
     for item in characters:
-        freq[item] = [0]
+        freq[item] = [0,0]
     return freq
 
 def initializeListSamplingTableCount():
@@ -41,6 +42,22 @@ def initializeListSamplingTableCount():
     for item in characters:
         freq[item] = [0]
     return freq
+
+#finds the index for the number for which sum exceeds the number
+def findPos(list, number):
+    i = 0;
+    j = len(list)
+
+    for k in range(0, len(list)):
+        t = floor((i + j) / 2)
+        sumTable = sum(list[0:t])
+        if (sumTable <= number):
+            i = t
+        else:
+            j=t
+        if(j-i == 1):
+           # print(i)
+           return i
 
 def makeKey(k,n):
     if n-1==0:
@@ -74,11 +91,12 @@ def updateFrequency(word, n):
             allContexts.append(context)
             allChars.append(char)
             nTable = len(modelDict[context][char])
-            tableNumber = random.randrange(1, nTable+1)    #Range starts from 1, as first element is frequency count
+            tableNumber = random.randrange(2, nTable+1)    #tableNumber is the index of the list
             if tableNumber < nTable:
                 modelDict[context][char][tableNumber] += 1
             else:
                 modelDict[context][char].append(1)
+                modelDict[context][char][1] += 1
             allTables.append(tableNumber)
 
 #Calculates probability of a character in a given context
@@ -119,7 +137,7 @@ for restaurant in restaurantNames:
     for dish in modelDict[restaurant]:
         if dish != custCountStr and dish != totalTableStr and dish != quStr and dish != duStr:
             modelDict[restaurant][custCountStr] += modelDict[restaurant][dish][0]
-            modelDict[restaurant][totalTableStr] += len(modelDict[restaurant][dish]) - 1
+            modelDict[restaurant][totalTableStr] += modelDict[restaurant][dish][1]
 
 #Prints all details of seating arrangement
 for restaurant in restaurantNames:
@@ -128,12 +146,69 @@ for restaurant in restaurantNames:
     for dish in modelDict[restaurant]:
         if dish != custCountStr and dish != totalTableStr and dish != quStr and dish != duStr:
             print('\n\tdish: ' + dish)
-            print('\tCust '+str(modelDict[restaurant][dish][0]) + "  TableCount: "+ str(len(modelDict[restaurant][dish])-1))
+            print('\tCust '+str(modelDict[restaurant][dish][0]) + "  TableCount: "+ str(modelDict[restaurant][dish][1]))
 
 #Creates data structure to save table count for each dish in each restaurant for each iteration step
 for restaurant in restaurantNames:
     samplingTableCount[restaurantNames[restaurant]] = initializeListSamplingTableCount()
 
+for i in range(0,ITERATION_COUNT):
+    charNo = -1
+    for char in allChars:
+        charNo += 1
+        tempTableProb = []
+        tempTableNo = allTables[charNo]
+        context = allContexts[charNo]
+        modelDict[context][char][tempTableNo] -= 1 # reduce by 1 number of customers sitting at that table
+        #modelDict[context][char][0] -= 1 # reduce by 1 number of customers having that dish in that restaurant
+        #modelDict[context][custCountStr] -= 1 #reduce by 1 number of customers in that restaurant
 
-#for i in range(0,ITERATION_COUNT):
-#    for char in allChars:
+        if (modelDict[context][char][tempTableNo] == 0):
+            modelDict[context][char][1] -= 1 #Reduce total number of tables serving that dish in that restaurant
+            modelDict[context][totalTableStr] -= 1 #Reduce total number of tables in that restaurant
+
+        qu = modelDict[context][quStr]
+        du = modelDict[context][duStr]
+        cu = modelDict[context][custCountStr] -1
+        tu = modelDict[context][totalTableStr]
+
+        for j in range(2, 2 + modelDict[context][char][1]):
+            if(modelDict[context][char][j] > 0):
+                cuw = modelDict[context][char][j]
+                probTable = (cuw - du)/(cu + qu)
+                tempTableProb.append(probTable)
+
+        baseProb = (qu + (du * tu))/(qu + cu)
+        probTableNew = baseProb * charProb(context[1:len(context)],char)
+        tempTableProb.append(probTableNew)
+        tempSum = sum(tempTableProb)
+        for item in range(0,len(tempTableProb)):
+            tempTableProb[item] = tempTableProb[item]/tempSum
+        randNo = random.randrange(0, 100000)/100000
+        posTable = findPos(tempTableProb,randNo)
+        allTables[charNo] = posTable + 2
+        lenTempProb = len(tempTableProb)
+
+        counter = 0
+        emptytableoccupied = False
+        for j in range(2, 2 + modelDict[context][char][1]):
+            if(modelDict[context][char][j] >= 1):
+                if(counter == posTable):
+                    modelDict[context][char][j] += 1
+                    break
+                counter += 1
+            else:
+                if(posTable == lenTempProb - 1):
+                    modelDict[context][char][j] += 1
+                    allTables[charNo] = j
+                    emptytableoccupied = True
+                    break
+        if emptytableoccupied == False:
+            modelDict[context][char].append(1)
+            allTables[charNo] = 1+lenTempProb
+
+        if (posTable == lenTempProb-1):
+            modelDict[context][char][1] += 1 #Increase total number of tables serving that dish in that restaurant
+            modelDict[context][totalTableStr] += 1 #Increase total number of tables in that restaurant
+
+
