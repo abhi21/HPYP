@@ -9,22 +9,27 @@ restaurantNames ={}
 totalIncrements = 0
 global index
 index = -1
+
+global loopC
+loopC = 0
 characters = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
 totalTableStr = 'totalTables'
+custCountStr = 'custCount'
 
 allContexts = []
 allChars = []
 allTables = []
-qu = 10
-du = 1
-
-custCountStr = 'custCount'
+qu = .8
+du = .2
+quStr = 'qu'
+duStr = 'du'
 
 
 def initializeList():
-    freq = {custCountStr: 0, totalTableStr:0, 'a':[0,qu,du],'b':[0,qu,du],'c':[0,qu,du],'d':[0,qu,du],'e':[0,qu,du],'f':[0,qu,du],'g':[0,qu,du],'h':[0,qu,du],'i':[0,qu,du],'j':[0,qu,du],'k':[0,qu,du],'l':[0,qu,du],'m':[0,qu,du],'n':[0,qu,du],'o':[0,qu,du],'p':[0,qu,du],'q':[0,qu,du],'r':[0,qu,du],'s':[0,qu,du],'t':[0,qu,du],'u':[0,qu,du],'v':[0,qu,du],'w':[0,qu,du],'x':[0,qu,du],'y':[0,qu,du],'z':[0,qu,du]}
-    return freq;
-
+    freq = {custCountStr: 0, totalTableStr:0, quStr: qu, duStr: du}
+    for item in characters:
+        freq[item] = [0]
+    return freq
 
 def makeKey(k,n):
     if n-1==0:
@@ -35,19 +40,14 @@ def makeKey(k,n):
             itemK = item + k
             makeKey(itemK, n-1)
 
-def getSubStr(beginIndex, sliceWindow, word):
-    return word[beginIndex: beginIndex + sliceWindow]
-
-
-
+#Generating restaurantNames from n
 makeKey('',n)
 
-for key in restaurantNames:
-    modelDict[restaurantNames[key]] = initializeList()
-    #print ('Key: ' + key + ' \t')
-    #print(modelDict[keysDict[key]])
+#Generating Main Dictionary
+for restaurant in restaurantNames:
+    modelDict[restaurantNames[restaurant]] = initializeList()
 
-
+#Update frequency count, partitions
 def updateFrequency(word, n):
     word = word.lower()
     wordLen = len(word)
@@ -66,39 +66,25 @@ def updateFrequency(word, n):
             #print('Context:' + context)
             char = word[i:i + 1]
             #print('Char: ' + char)
-            modelDict[context][char][0] += 1
+            modelDict[context][char][0] += 1               #Frequency update
             allContexts.append(context)
             allChars.append(char)
-            nTable = len(modelDict[context][char]) - 3
-            tableNumber = random.randrange(0, nTable+1,1)
-            if tableNumber in modelDict[context][char][3:nTable]:
+            nTable = len(modelDict[context][char])
+            tableNumber = random.randrange(1, nTable)    #Range starts from 1, as first element is frequency count
+            if tableNumber < nTable:
                 modelDict[context][char][tableNumber] += 1
+                #global loopC
+                #loopC += 1
+                #print(loopC)
             else:
                 modelDict[context][char].append(1)
             allTables.append(tableNumber)
-
-
-def initializeTables(word):
-    word = word.lower()
-    wordLen = len(word)
-
-    for i in range(0, wordLen):
-        tempN = n
-        psc = i
-        while((psc >= 0) and (tempN - 1 >=0)):
-            psc = psc-1
-            tempN = tempN - 1
-            context = word[psc + 1:i]
-            #print('Context:' + context)
-            char = word[i:i + 1]
-            #print('Char: ' + char)
-            modelDict[context][char][0] += 1
 
 def assertInitialization():
     for key in restaurantNames:
         for char in characters:
             freq = modelDict[key][char][0]
-            sumCustomers = sum(modelDict[key][char])-freq-qu-du
+            sumCustomers = sum(modelDict[key][char])-freq
             print('Freq: ' + str(freq) + 'Customers' + str(sumCustomers))
 
 def wordProb(context, char):
@@ -106,9 +92,9 @@ def wordProb(context, char):
         return 1/26
     else:
         cuw = modelDict[context][char][0]
-        qu = modelDict[context][char][1]
-        du = modelDict[context][char][2]
-        tuw = len(modelDict[context][char]) - 3
+        qu = modelDict[context][quStr]
+        du = modelDict[context][duStr]
+        tuw = len(modelDict[context][char]) - 1
         cu = modelDict[context][custCountStr]
         tu = modelDict[context][totalTableStr]
         selfProb = (cuw - (du*tuw))/(qu + cu)
@@ -123,21 +109,18 @@ with open("data/dist_female_first.txt", "r") as f:
     updateFrequency(name,n)
   assertInitialization()
 
-#print(totalIncrements)
 
-#or key in keysDict:
-#   print('\nKey: ' + key)
-#   print(modelDict[key])
-
-for key in restaurantNames:
-    for dish in modelDict[key]:
+for restaurant in restaurantNames:
+    for dish in modelDict[restaurant]:
         if dish != custCountStr and dish != totalTableStr:
-            modelDict[key][custCountStr] += modelDict[key][dish][0]
-            modelDict[key][totalTableStr] += len(modelDict[key][dish]) - 3
+            modelDict[restaurant][custCountStr] += modelDict[restaurant][dish][0]
+            modelDict[restaurant][totalTableStr] += len(modelDict[restaurant][dish]) - 1
 
-for key in restaurantNames:
-   print('\nKey: ' + key)
-   print('Cust '+str(modelDict[key][custCountStr]) + "  TableCount: "+ str(modelDict[key][totalTableStr]))
+for restaurant in restaurantNames:
+   print('\nKey: ' + restaurant)
+   print('Cust '+str(modelDict[restaurant][custCountStr]) + "  TableCount: "+ str(modelDict[restaurant][totalTableStr]))
+   #for k in modelDict[key]:
+        #print(modelDict[key][k])
 
-
-
+for restaurant in restaurantNames:
+    print(restaurant)
