@@ -2,9 +2,10 @@ __author__ = 'abhi21'
 
 #import numpy as num
 import random
+import numpy
 from math import floor
 
-n = 2
+n = 3
 modelDict = {}
 samplingTableCount ={}
 restaurantNames ={}
@@ -13,7 +14,7 @@ global index
 index = -1
 
 global ITERATION_COUNT
-ITERATION_COUNT = 1
+ITERATION_COUNT = 100
 
 
 global loopC
@@ -21,8 +22,8 @@ loopC = 0
 characters = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
 totalTableStr = 'totalTables'
 custCountStr = 'custCount'
-qu = .8
-du = .2
+qu = .2
+du = .05
 quStr = 'qu'
 duStr = 'du'
 
@@ -60,8 +61,9 @@ def findPos(list, number):
            return i
 
 def makeKey(k,n):
-    if n-1==0:
-        restaurantNames[k] = k
+    if (n-1==0):
+        if (k != ''):
+            restaurantNames[k] = k
     else:
         restaurantNames[k] = k
         for item in characters:
@@ -107,7 +109,7 @@ def charProb(context, char):
         cuw = modelDict[context][char][0]
         qu = modelDict[context][quStr]
         du = modelDict[context][duStr]
-        tuw = len(modelDict[context][char]) - 1
+        tuw = modelDict[context][char][1]
         cu = modelDict[context][custCountStr]
         tu = modelDict[context][totalTableStr]
         selfProb = (cuw - (du*tuw))/(qu + cu)
@@ -140,32 +142,39 @@ for restaurant in restaurantNames:
             modelDict[restaurant][totalTableStr] += modelDict[restaurant][dish][1]
 
 #Prints all details of seating arrangement
-for restaurant in restaurantNames:
-    print('\nrestaurant: ' + restaurant)
-    print('Cust '+str(modelDict[restaurant][custCountStr]) + "  TableCount: "+ str(modelDict[restaurant][totalTableStr]))
-    for dish in modelDict[restaurant]:
-        if dish != custCountStr and dish != totalTableStr and dish != quStr and dish != duStr:
-            print('\n\tdish: ' + dish)
-            print('\tCust '+str(modelDict[restaurant][dish][0]) + "  TableCount: "+ str(modelDict[restaurant][dish][1]))
+#for restaurant in restaurantNames:
+#    print('\nrestaurant: ' + restaurant)
+#    print('Cust '+str(modelDict[restaurant][custCountStr]) + "  TableCount: "+ str(modelDict[restaurant][totalTableStr]))
+#    for dish in modelDict[restaurant]:
+#        if dish != custCountStr and dish != totalTableStr and dish != quStr and dish != duStr:
+#            print('\n\tdish: ' + dish)
+#            print('\tCust '+str(modelDict[restaurant][dish][0]) + "  TableCount: "+ str(modelDict[restaurant][dish][1]))
+
+print("-----------------Before Gibbs--------------------")
+print('Total Cust '+str(modelDict['a'][custCountStr]) + "  Total TableCount: "+ str(modelDict['a'][totalTableStr]))
+#for dish in modelDict['b']:
+#    if dish != custCountStr and dish != totalTableStr and dish != quStr and dish != duStr:
+#        print('\tCust '+str(modelDict['b'][dish][0]) + "  TableCount: "+ str(modelDict['b'][dish][1]))
 
 #Creates data structure to save table count for each dish in each restaurant for each iteration step
 for restaurant in restaurantNames:
     samplingTableCount[restaurantNames[restaurant]] = initializeListSamplingTableCount()
 
 for i in range(0,ITERATION_COUNT):
+    print("==============> Iteration: "+ str(i))
     charNo = -1
     for char in allChars:
+        tableEmptied = False
         charNo += 1
         tempTableProb = []
         tempTableNo = allTables[charNo]
         context = allContexts[charNo]
         modelDict[context][char][tempTableNo] -= 1 # reduce by 1 number of customers sitting at that table
-        #modelDict[context][char][0] -= 1 # reduce by 1 number of customers having that dish in that restaurant
-        #modelDict[context][custCountStr] -= 1 #reduce by 1 number of customers in that restaurant
 
         if (modelDict[context][char][tempTableNo] == 0):
             modelDict[context][char][1] -= 1 #Reduce total number of tables serving that dish in that restaurant
             modelDict[context][totalTableStr] -= 1 #Reduce total number of tables in that restaurant
+            tableEmptied = True
 
         qu = modelDict[context][quStr]
         du = modelDict[context][duStr]
@@ -186,29 +195,37 @@ for i in range(0,ITERATION_COUNT):
             tempTableProb[item] = tempTableProb[item]/tempSum
         randNo = random.randrange(0, 100000)/100000
         posTable = findPos(tempTableProb,randNo)
-        allTables[charNo] = posTable + 2
         lenTempProb = len(tempTableProb)
 
-        counter = 0
-        emptytableoccupied = False
-        for j in range(2, 2 + modelDict[context][char][1]):
-            if(modelDict[context][char][j] >= 1):
-                if(counter == posTable):
-                    modelDict[context][char][j] += 1
-                    break
-                counter += 1
-            else:
-                if(posTable == lenTempProb - 1):
-                    modelDict[context][char][j] += 1
-                    allTables[charNo] = j
-                    emptytableoccupied = True
-                    break
-        if emptytableoccupied == False:
-            modelDict[context][char].append(1)
-            allTables[charNo] = 1+lenTempProb
-
-        if (posTable == lenTempProb-1):
+        if (posTable == (lenTempProb - 1)):
             modelDict[context][char][1] += 1 #Increase total number of tables serving that dish in that restaurant
             modelDict[context][totalTableStr] += 1 #Increase total number of tables in that restaurant
+            if (tableEmptied == True):
+                modelDict[context][char][allTables[charNo]] += 1
+            else:
+                modelDict[context][char].append(1)
+                allTables[charNo] = 2 + posTable
+        else:
+            counter = 0
+            for j in range(2, 2 + modelDict[context][char][1]):
+                if(modelDict[context][char][j] > 0):
+                    if(counter == posTable):
+                        modelDict[context][char][j] += 1
+                        allTables[charNo] = j
+                        break
+                    counter += 1
 
+    print("-----------------After Each Gibbs Iteration--------------------")
+    print('Total Cust '+str(modelDict['a'][custCountStr]) + "  Total TableCount: "+ str(modelDict['a'][totalTableStr]))
+    #At the end of each iteration storing no of tables for each dish in each restaurant
+    for restaurant in restaurantNames:
+        for dish in restaurant:
+            if dish != custCountStr and dish != totalTableStr and dish != quStr and dish != duStr:
+                samplingTableCount[restaurant][dish].append(modelDict[restaurant][dish][1])
+
+#After Gibbs sampling update the no of tables for each dish in each restaurant by averaging the counts
+for restaurant in restaurantNames:
+    for dish in restaurant:
+        if dish != custCountStr and dish != totalTableStr and dish != quStr and dish != duStr:
+            modelDict[restaurant][dish][1] = floor(numpy.mean(samplingTableCount[restaurant][dish]))
 
