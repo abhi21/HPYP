@@ -3,27 +3,23 @@ __author__ = 'abhi21'
 #import numpy as num
 import random
 import numpy
+from math import log2
 from math import floor
 
-n = 3
+n = 2
 modelDict = {}
 samplingTableCount ={}
 restaurantNames ={}
 totalIncrements = 0
-global index
-index = -1
 
 global ITERATION_COUNT
-ITERATION_COUNT = 100
+ITERATION_COUNT = 1000
 
-
-global loopC
-loopC = 0
 characters = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
 totalTableStr = 'totalTables'
 custCountStr = 'custCount'
-qu = .2
-du = .05
+qu = 0.8
+du = 0.05
 quStr = 'qu'
 duStr = 'du'
 
@@ -31,6 +27,10 @@ allContexts = []
 allChars = []
 allTables = []
 
+#UnigramDict
+uniDict = {}
+for item in characters:
+    uniDict[item] = 0
 
 def initializeList():
     freq = {custCountStr: 0, totalTableStr:0, quStr: qu, duStr: du}
@@ -80,9 +80,10 @@ def updateFrequency(word, n):
         tempN = n
         psc = i
 
+        #Increment freq for unigram
+        uniDict[word[i]] += 1
+
         while((psc >= 0) and (tempN - 1 >=0)):
-            global index
-            index = index + 1
             psc = psc-1
             tempN = tempN - 1
             context = word[psc + 1:i]
@@ -93,7 +94,7 @@ def updateFrequency(word, n):
             allContexts.append(context)
             allChars.append(char)
             nTable = len(modelDict[context][char])
-            tableNumber = random.randrange(2, nTable+1)    #tableNumber is the index of the list
+            tableNumber = random.randrange(2, 1+nTable)    #tableNumber is the index of the list, 3 = ntable +1
             if tableNumber < nTable:
                 modelDict[context][char][tableNumber] += 1
             else:
@@ -104,7 +105,7 @@ def updateFrequency(word, n):
 #Calculates probability of a character in a given context
 def charProb(context, char):
     if(context == ''):
-        return 1/26
+        return uniDict[char]
     else:
         cuw = modelDict[context][char][0]
         qu = modelDict[context][quStr]
@@ -117,12 +118,72 @@ def charProb(context, char):
         context = context[1:len(context)]
         return selfProb + (baseProb*charProb(context,char))
 
+def calcEntropy(word, n):
+    word = word.lower()
+    wordLen = len(word)
+
+    entropy = 0
+    for i in range(0, wordLen):
+        contextlength = min(i,n)
+        context = word[i+1-contextlength:i]
+        char = word[i:i + 1]
+        entropy += log2(charProb(context,char))
+    return entropy
+
+def testPerplexity():
+    global entropy, nChars, f, line, name, perplexity
+    testFile = readTestFile()
+    entropy = 0
+    nChars = 0
+    with testFile as f:
+        for line in f:
+            name = line.split()[0]
+            nChars += len(name)
+            entropy += calcEntropy(name, n)
+    perplexity = pow(2, (-entropy / nChars))
+    testFile.close()
+    return perplexity
+
+def calcEntropyUnigram(word):
+    word = word.lower()
+    wordLen = len(word)
+
+    entropy = 0
+    for i in range(0, wordLen):
+        char = word[i]
+        entropy += log2(uniDict[char])
+    return entropy
+
+
+def readTestFile():
+    testFile = open("data/dist_male_first.txt", "r")
+    return testFile
+
+
+def testPerplexityUnigram():
+    global entropy, nChars, f, line, name, perplexity
+    testFile = readTestFile()
+    entropy = 0
+    nChars = 0
+    with testFile as f:
+        for line in f:
+            name = line.split()[0]
+            nChars += len(name)
+            entropy += calcEntropyUnigram(name)
+    perplexity = pow(2, (-entropy / nChars))
+    testFile.close()
+    return perplexity
+
 #Creates restaurantNames for a given context length
 makeKey('',n)
 
 #Creates Main Dictionary
 for restaurant in restaurantNames:
     modelDict[restaurantNames[restaurant]] = initializeList()
+
+#Creates data structure to save table count for each dish in each restaurant for each iteration step
+for restaurant in restaurantNames:
+    samplingTableCount[restaurantNames[restaurant]] = initializeListSamplingTableCount()
 
 #Reads Training File
 fileName = "data/dist_female_first.txt"
@@ -133,6 +194,15 @@ with file as f:
     updateFrequency(name,n)  #Updates frequency count, and initializes table assignment
 
 file.close()
+
+#calculate sum for unigram
+sumUnigram = 0
+for key in uniDict:
+    sumUnigram += uniDict[key]
+#Calculate probability
+for key in uniDict:
+    uniDict[key] = uniDict[key]/sumUnigram
+
 
 #Generates custCount and totalTable
 for restaurant in restaurantNames:
@@ -150,15 +220,13 @@ for restaurant in restaurantNames:
 #            print('\n\tdish: ' + dish)
 #            print('\tCust '+str(modelDict[restaurant][dish][0]) + "  TableCount: "+ str(modelDict[restaurant][dish][1]))
 
+p = testPerplexityUnigram()
+print('UnigramP: '+str(p))
+
+p = testPerplexity()
+print(p)
 print("-----------------Before Gibbs--------------------")
 print('Total Cust '+str(modelDict['a'][custCountStr]) + "  Total TableCount: "+ str(modelDict['a'][totalTableStr]))
-#for dish in modelDict['b']:
-#    if dish != custCountStr and dish != totalTableStr and dish != quStr and dish != duStr:
-#        print('\tCust '+str(modelDict['b'][dish][0]) + "  TableCount: "+ str(modelDict['b'][dish][1]))
-
-#Creates data structure to save table count for each dish in each restaurant for each iteration step
-for restaurant in restaurantNames:
-    samplingTableCount[restaurantNames[restaurant]] = initializeListSamplingTableCount()
 
 for i in range(0,ITERATION_COUNT):
     print("==============> Iteration: "+ str(i))
@@ -182,7 +250,7 @@ for i in range(0,ITERATION_COUNT):
         tu = modelDict[context][totalTableStr]
 
         for j in range(2, 2 + modelDict[context][char][1]):
-            if(modelDict[context][char][j] > 0):
+            if(modelDict[context][char][j] > 0): #non empty tables
                 cuw = modelDict[context][char][j]
                 probTable = (cuw - du)/(cu + qu)
                 tempTableProb.append(probTable)
@@ -214,9 +282,12 @@ for i in range(0,ITERATION_COUNT):
                         allTables[charNo] = j
                         break
                     counter += 1
+    p= testPerplexity()
+    print(p)
 
     print("-----------------After Each Gibbs Iteration--------------------")
     print('Total Cust '+str(modelDict['a'][custCountStr]) + "  Total TableCount: "+ str(modelDict['a'][totalTableStr]))
+
     #At the end of each iteration storing no of tables for each dish in each restaurant
     for restaurant in restaurantNames:
         for dish in restaurant:
@@ -228,4 +299,3 @@ for restaurant in restaurantNames:
     for dish in restaurant:
         if dish != custCountStr and dish != totalTableStr and dish != quStr and dish != duStr:
             modelDict[restaurant][dish][1] = floor(numpy.mean(samplingTableCount[restaurant][dish]))
-
