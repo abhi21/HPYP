@@ -2,29 +2,26 @@ __author__ = 'abhi21'
 
 #import numpy as num
 import random
-#import numpy
+import numpy
 from math import log2
 from math import floor
 
-n = 4
+n = 2
 modelDict = {}
 samplingTableCount ={}
 restaurantNames ={}
 totalIncrements = 0
 
 global ITERATION_COUNT
-ITERATION_COUNT = 100
+ITERATION_COUNT = 1000
 
 characters = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
 totalTableStr = 'totalTables'
 custCountStr = 'custCount'
-qu = 0.2
-du = 0.2
+qu = 0.8
+du = 0.05
 quStr = 'qu'
 duStr = 'du'
-
-param = [1,1,1,1]
-paramStr = 'param'
 
 allContexts = []
 allChars = []
@@ -36,7 +33,7 @@ for item in characters:
     uniDict[item] = 0
 
 def initializeList():
-    freq = {custCountStr: 0, totalTableStr:0, quStr: qu, duStr: du, paramStr: param}
+    freq = {custCountStr: 0, totalTableStr:0, quStr: qu, duStr: du}
     for item in characters:
         freq[item] = [0,0]
     return freq
@@ -82,6 +79,7 @@ def updateFrequency(word, n):
     for i in range(0, wordLen):
         tempN = n
         psc = i
+
         #Increment freq for unigram
         uniDict[word[i]] += 1
 
@@ -107,8 +105,7 @@ def updateFrequency(word, n):
 #Calculates probability of a character in a given context
 def charProb(context, char):
     if(context == ''):
-        #return uniDict[char]
-        return 1/26
+        return uniDict[char]
     else:
         cuw = modelDict[context][char][0]
         qu = modelDict[context][quStr]
@@ -159,7 +156,7 @@ def calcEntropyUnigram(word):
 
 
 def readTestFile():
-    testFile = open("data/dist_all_last.txt", "r")
+    testFile = open("data/dist_male_first.txt", "r")
     return testFile
 
 
@@ -177,46 +174,6 @@ def testPerplexityUnigram():
     testFile.close()
     return perplexity
 
-def parametersampler():
-    for restaurant in restaurantNames:
-        qu = modelDict[restaurant][quStr]
-        du = modelDict[restaurant][duStr]
-        cu = modelDict[restaurant][custCountStr]
-        tu = modelDict[restaurant][totalTableStr]
-        xu = 0
-        if (tu >= 2):
-            xu = log2(random.betavariate(qu + 1,cu-1))
-        yubeta = 0
-        yugamma = 0
-        if(tu>=2):
-            for p in range(1,tu):
-                yui = 0
-                uni = random.randrange(0,1000)/1000
-                probBernoulli = (qu/(qu + du*p))
-                if (uni<probBernoulli):
-                    yui = 1
-                yubeta = yubeta + (1 - yui)
-                yugamma = yugamma + yui
-        zuw = 0;
-        for dish in modelDict[restaurant]:
-            if dish != custCountStr and dish != totalTableStr and dish != quStr and dish != duStr and dish != paramStr:
-                for t in range(2,len(modelDict[restaurant][dish])):
-                    if modelDict[restaurant][dish][t] >= 2:
-                        for tw in range(1,modelDict[restaurant][dish][t]):
-                            zuwk = 0
-                            uni = random.randrange(0,1000)/1000
-                            probBernoulli = (tw-1)/(tw -du)
-                            if(uni<probBernoulli):
-                                zuwk = 1
-                            zuw = zuw + (1-zuwk)
-    am = modelDict[restaurant][paramStr][0] + yubeta
-    bm = modelDict[restaurant][paramStr][1] + zuw
-    alpham = modelDict[restaurant][paramStr][2] + yugamma
-    betam = modelDict[restaurant][paramStr][3] - xu
-    modelDict[restaurant][quStr] = random.gammavariate(alpham,betam)
-    modelDict[restaurant][duStr] = random.betavariate(am,bm)
-
-
 #Creates restaurantNames for a given context length
 makeKey('',n)
 
@@ -229,7 +186,7 @@ for restaurant in restaurantNames:
     samplingTableCount[restaurantNames[restaurant]] = initializeListSamplingTableCount()
 
 #Reads Training File
-fileName = "data/dist_all_last.txt"
+fileName = "data/dist_female_first.txt"
 file = open(fileName, "r")
 with file as f:
   for line in f:
@@ -249,14 +206,8 @@ for key in uniDict:
 
 #Generates custCount and totalTable
 for restaurant in restaurantNames:
-    am = modelDict[restaurant][paramStr][0]
-    bm = modelDict[restaurant][paramStr][1]
-    alpham = modelDict[restaurant][paramStr][2]
-    betam = modelDict[restaurant][paramStr][3]
-    modelDict[restaurant][quStr] = random.gammavariate(alpham,betam)
-    modelDict[restaurant][duStr] = random.betavariate(am,bm)
     for dish in modelDict[restaurant]:
-        if dish != custCountStr and dish != totalTableStr and dish != quStr and dish != duStr and dish != paramStr:
+        if dish != custCountStr and dish != totalTableStr and dish != quStr and dish != duStr:
             modelDict[restaurant][custCountStr] += modelDict[restaurant][dish][0]
             modelDict[restaurant][totalTableStr] += modelDict[restaurant][dish][1]
 
@@ -265,25 +216,9 @@ for restaurant in restaurantNames:
 #    print('\nrestaurant: ' + restaurant)
 #    print('Cust '+str(modelDict[restaurant][custCountStr]) + "  TableCount: "+ str(modelDict[restaurant][totalTableStr]))
 #    for dish in modelDict[restaurant]:
-#        if dish != custCountStr and dish != totalTableStr and dish != quStr and dish != duStr  and dish != paramStr:
+#        if dish != custCountStr and dish != totalTableStr and dish != quStr and dish != duStr:
 #            print('\n\tdish: ' + dish)
 #            print('\tCust '+str(modelDict[restaurant][dish][0]) + "  TableCount: "+ str(modelDict[restaurant][dish][1]))
-
-def verifytable():
-    for restaurant in restaurantNames:
-        for dish in modelDict[restaurant]:
-            if dish != custCountStr and dish != totalTableStr and dish != quStr and dish != duStr and dish != paramStr:
-                ntables = modelDict[restaurant][dish][1]
-                ntablespart = 0
-                for i in range(2,len(modelDict[restaurant][dish])):
-                    if(modelDict[restaurant][dish][i] > 0):
-                        ntablespart += 1
-                if ntables != ntablespart:
-                    print('\nNumber of Tables: ' + str(ntables) + "   Number of tables as per partitions " + str(ntablespart))
-                ncust = modelDict[restaurant][dish][0]
-                ncustpart = sum(modelDict[restaurant][dish]) - modelDict[restaurant][dish][0] -modelDict[restaurant][dish][1]
-                if ncust != ncustpart:
-                    print('Total Customers: ' + str(ncust) + "   Number of customers as per partitions " + str(ncustpart))
 
 p = testPerplexityUnigram()
 print('UnigramP: '+str(p))
@@ -297,6 +232,7 @@ for i in range(0,ITERATION_COUNT):
     print("==============> Iteration: "+ str(i))
     charNo = -1
     for char in allChars:
+        tableEmptied = False
         charNo += 1
         tempTableProb = []
         tempTableNo = allTables[charNo]
@@ -306,13 +242,14 @@ for i in range(0,ITERATION_COUNT):
         if (modelDict[context][char][tempTableNo] == 0):
             modelDict[context][char][1] -= 1 #Reduce total number of tables serving that dish in that restaurant
             modelDict[context][totalTableStr] -= 1 #Reduce total number of tables in that restaurant
+            tableEmptied = True
 
         qu = modelDict[context][quStr]
         du = modelDict[context][duStr]
         cu = modelDict[context][custCountStr] -1
         tu = modelDict[context][totalTableStr]
 
-        for j in range(2, len(modelDict[context][char])):
+        for j in range(2, 2 + modelDict[context][char][1]):
             if(modelDict[context][char][j] > 0): #non empty tables
                 cuw = modelDict[context][char][j]
                 probTable = (cuw - du)/(cu + qu)
@@ -331,46 +268,34 @@ for i in range(0,ITERATION_COUNT):
         if (posTable == (lenTempProb - 1)):
             modelDict[context][char][1] += 1 #Increase total number of tables serving that dish in that restaurant
             modelDict[context][totalTableStr] += 1 #Increase total number of tables in that restaurant
-
-        occupiedemptytable = 0
-        counter = 0
-        for j in range(2, len(modelDict[context][char])):
-            if(modelDict[context][char][j] > 0):
-                if(counter == posTable):
-                    modelDict[context][char][j] += 1
-                    allTables[charNo] = j
-                    break
-                counter += 1
+            if (tableEmptied == True):
+                modelDict[context][char][allTables[charNo]] += 1
             else:
-                if(posTable == (lenTempProb - 1)):
-                    modelDict[context][char][j] += 1
-                    allTables[charNo] = j
-                    occupiedemptytable = 1
-                    break
-        if((posTable == lenTempProb - 1) and (occupiedemptytable == 0)):
-            modelDict[context][char].append(1)
-            allTables[charNo] = len(modelDict[context][char]) -1
+                modelDict[context][char].append(1)
+                allTables[charNo] = 2 + posTable
+        else:
+            counter = 0
+            for j in range(2, 2 + modelDict[context][char][1]):
+                if(modelDict[context][char][j] > 0):
+                    if(counter == posTable):
+                        modelDict[context][char][j] += 1
+                        allTables[charNo] = j
+                        break
+                    counter += 1
+    p= testPerplexity()
+    print(p)
 
-    # Call Hyper-parameter Sampler
-    parametersampler()
-
-    if i in range(1,ITERATION_COUNT,1):
-        p= testPerplexity()
-        print(p)
-        #verifytable()
     print("-----------------After Each Gibbs Iteration--------------------")
     print('Total Cust '+str(modelDict['a'][custCountStr]) + "  Total TableCount: "+ str(modelDict['a'][totalTableStr]))
 
-#At the end of each iteration storing no of tables for each dish in each restaurant
-#for restaurant in restaurantNames:
-#    for dish in restaurant:
-#        if dish != custCountStr and dish != totalTableStr and dish != quStr and dish != duStr  and dish != paramStr:
-#            samplingTableCount[restaurant][dish].append(modelDict[restaurant][dish][1])
+    #At the end of each iteration storing no of tables for each dish in each restaurant
+    for restaurant in restaurantNames:
+        for dish in restaurant:
+            if dish != custCountStr and dish != totalTableStr and dish != quStr and dish != duStr:
+                samplingTableCount[restaurant][dish].append(modelDict[restaurant][dish][1])
 
-p= testPerplexity()
-print(p)
-
-
-
-
-
+#After Gibbs sampling update the no of tables for each dish in each restaurant by averaging the counts
+for restaurant in restaurantNames:
+    for dish in restaurant:
+        if dish != custCountStr and dish != totalTableStr and dish != quStr and dish != duStr:
+            modelDict[restaurant][dish][1] = floor(numpy.mean(samplingTableCount[restaurant][dish]))
