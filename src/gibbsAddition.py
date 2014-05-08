@@ -71,11 +71,7 @@ for i in range(0,ITERATION_COUNT):
             if dish != custCountStr and dish != totalTableStr and dish != quStr and dish != duStr:
                 samplingTableCount[restaurant][dish].append(modelDict[restaurant][dish][1])
 
-#After Gibbs sampling update the no of tables for each dish in each restaurant by averaging the counts
-for restaurant in restaurantNames:
-    for dish in restaurant:
-        if dish != custCountStr and dish != totalTableStr and dish != quStr and dish != duStr:
-            modelDict[restaurant][dish][1] = floor(numpy.mean(samplingTableCount[restaurant][dish]))
+
 
 
 

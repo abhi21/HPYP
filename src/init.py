@@ -2,11 +2,11 @@ __author__ = 'abhi21'
 
 #import numpy as num
 import random
-#import numpy
+import numpy
 from math import log2
 from math import floor
 
-n = 4
+n = 2
 modelDict = {}
 samplingTableCount ={}
 restaurantNames ={}
@@ -107,8 +107,8 @@ def updateFrequency(word, n):
 #Calculates probability of a character in a given context
 def charProb(context, char):
     if(context == ''):
-        #return uniDict[char]
-        return 1/26
+        return uniDict[char]
+        #return 1/26
     else:
         cuw = modelDict[context][char][0]
         qu = modelDict[context][quStr]
@@ -147,6 +147,20 @@ def testPerplexity():
     testFile.close()
     return perplexity
 
+def trainPerplexity():
+    global entropy, nChars, f, line, name, perplexity
+    testFile = readTrainFile()
+    entropy = 0
+    nChars = 0
+    with testFile as f:
+        for line in f:
+            name = line.split()[0]
+            nChars += len(name)
+            entropy += calcEntropy(name, n)
+    perplexity = pow(2, (-entropy / nChars))
+    testFile.close()
+    return perplexity
+
 def calcEntropyUnigram(word):
     word = word.lower()
     wordLen = len(word)
@@ -159,7 +173,11 @@ def calcEntropyUnigram(word):
 
 
 def readTestFile():
-    testFile = open("data/dist_all_last.txt", "r")
+    testFile = open("data/dist_male_first.txt", "r")
+    return testFile
+
+def readTrainFile():
+    testFile = open("data/dist_female_first.txt", "r")
     return testFile
 
 
@@ -229,8 +247,7 @@ for restaurant in restaurantNames:
     samplingTableCount[restaurantNames[restaurant]] = initializeListSamplingTableCount()
 
 #Reads Training File
-fileName = "data/dist_all_last.txt"
-file = open(fileName, "r")
+file = readTrainFile()
 with file as f:
   for line in f:
     name = line.split()[0]
@@ -362,13 +379,22 @@ for i in range(0,ITERATION_COUNT):
     print('Total Cust '+str(modelDict['a'][custCountStr]) + "  Total TableCount: "+ str(modelDict['a'][totalTableStr]))
 
 #At the end of each iteration storing no of tables for each dish in each restaurant
-#for restaurant in restaurantNames:
-#    for dish in restaurant:
-#        if dish != custCountStr and dish != totalTableStr and dish != quStr and dish != duStr  and dish != paramStr:
-#            samplingTableCount[restaurant][dish].append(modelDict[restaurant][dish][1])
+for restaurant in restaurantNames:
+    for dish in restaurant:
+        if dish != custCountStr and dish != totalTableStr and dish != quStr and dish != duStr  and dish != paramStr:
+            samplingTableCount[restaurant][dish].append(modelDict[restaurant][dish][1])
+
+#After Gibbs sampling update the no of tables for each dish in each restaurant by averaging the counts
+for restaurant in restaurantNames:
+    for dish in restaurant:
+        if dish != custCountStr and dish != totalTableStr and dish != quStr and dish != duStr:
+            modelDict[restaurant][dish][1] = floor(numpy.mean(samplingTableCount[restaurant][dish]))
+
+trainP = trainPerplexity()
+print("Train Perplexity " + str(trainP))
 
 p= testPerplexity()
-print(p)
+print("Test Perplexity " + str(p))
 
 
 
